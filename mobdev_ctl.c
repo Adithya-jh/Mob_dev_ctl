@@ -13,20 +13,20 @@ enum mobdev_cmd {
     MOBDEV_FILE_TRANSFER,
     MOBDEV_TETHERING,
     MOBDEV_NOTIFICATIONS
-};  
+};
 
 struct mobdev_args {
-    int  enable;
-    char path[128];
-     char ifname[32];  // <-- Add a field for interface name
+    int  enable;       // 1 = push, 0 = pull
+    char path[128];    // File path for transfer
+    char ifname[32];   // Network interface name
 };
 
 static void usage(const char *prog)
 {
     fprintf(stderr, "Usage:\n");
     fprintf(stderr, "  %s detect\n", prog);
-    fprintf(stderr, "  %s transfer <path>\n", prog);
-    fprintf(stderr, "  %s tether [on|off]\n", prog);
+    fprintf(stderr, "  %s transfer [push|pull] <file_path>\n", prog);
+    fprintf(stderr, "  %s tether [on|off] <interface>\n", prog);
     fprintf(stderr, "  %s notify [on|off]\n", prog);
 }
 
@@ -46,45 +46,63 @@ int main(int argc, char *argv[])
         cmd = MOBDEV_DETECT;
     } 
     
- else if (!strcmp(argv[1], "transfer")) {
-    cmd = MOBDEV_FILE_TRANSFER;
-    // We have args.path if we want a file path, etc.
-    if (argc > 2) {
-        strncpy(args.path, argv[2], sizeof(args.path) - 1);
+    else if (!strcmp(argv[1], "transfer")) {
+        if (argc < 4) {
+            fprintf(stderr, "Usage: %s transfer [push|pull] <file_path>\n", argv[0]);
+            return 1;
+        }
+
+        cmd = MOBDEV_FILE_TRANSFER;
+        if (!strcmp(argv[2], "push")) {
+            args.enable = 1;
+        } else if (!strcmp(argv[2], "pull")) {
+            args.enable = 0;
+        } else {
+            fprintf(stderr, "Invalid transfer mode. Use 'push' or 'pull'.\n");
+            return 1;
+        }
+
+        strncpy(args.path, argv[3], sizeof(args.path) - 1);
+        args.path[sizeof(args.path) - 1] = '\0';
+
+        long ret = syscall(SYS_mobdev_control, cmd, &args);
+        if (ret < 0) {
+            perror("mobdev_control syscall failed");
+            return 1;
+        }
+
+        // If kernel detected an MTP device, use ADB for file transfer
+        if (args.enable) {
+            char adb_cmd[256];
+            snprintf(adb_cmd, sizeof(adb_cmd), "push %s /sdcard/", args.path);
+            printf("Executing: %s\n", adb_cmd);
+            system(adb_cmd);
+        } else {
+            char adb_cmd[256];
+            snprintf(adb_cmd, sizeof(adb_cmd), "pull /sdcard/%s .", args.path);
+            printf("Executing: %s\n", adb_cmd);
+            system(adb_cmd);
+        }
+        
+        return 0;
+    } 
+
+    else if (!strcmp(argv[1], "tether")) {
+        cmd = MOBDEV_TETHERING;
+        if (argc >= 3 && !strcmp(argv[2], "on")) {
+            args.enable = 1;
+        } else {
+            args.enable = 0;
+        }
+
+        if (argc >= 4) {
+            strncpy(args.ifname, argv[3], sizeof(args.ifname) - 1);
+            args.ifname[sizeof(args.ifname) - 1] = '\0';
+        } else {
+            strcpy(args.ifname, "usb0");
+        }
     }
 
-    long ret = syscall(SYS_mobdev_control, cmd, &args);
-    if (ret < 0) {
-        perror("mobdev_control syscall failed");
-        return 1;
-    }
-
-    // Kernel side says "MTP device found"? Let's do the actual file copy in user space:
-    system("jmtpfs /mnt/phone");
-    // now copy files to/from /mnt/phone/DCIM ...
-    // eventually "fusermount -u /mnt/phone"
-
-    // or directly: system("simple-mtpfs /mnt/phone");
-}
-     
- else if (!strcmp(argv[1], "tether")) {
-    cmd = MOBDEV_TETHERING;
-    // Example usage: ./mobdev_ctl tether on enxc6307ebd3033
-    if (argc >= 3 && !strcmp(argv[2], "on")) {
-        args.enable = 1;
-    } else {
-        args.enable = 0;
-    }
-    if (argc >= 4) {
-        // copy interface name from argv[3] to args.ifname
-        strncpy(args.ifname, argv[3], sizeof(args.ifname) - 1);
-        args.ifname[sizeof(args.ifname) - 1] = '\0';
-    } else {
-        // fallback if no interface is specified
-        strcpy(args.ifname, "usb0");
-    }
-}
-    
     else if (!strcmp(argv[1], "notify")) {
         cmd = MOBDEV_NOTIFICATIONS;
         if (argc >= 3 && !strcmp(argv[2], "on")) {
@@ -98,13 +116,11 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Call our new syscall
+    // Call syscall
     long ret;
     if (cmd == MOBDEV_DETECT) {
-        // DETECT doesn't use the struct, so pass NULL (0).
         ret = syscall(SYS_mobdev_control, cmd, 0);
     } else {
-        // The other commands use the 'mobdev_args' struct
         ret = syscall(SYS_mobdev_control, cmd, &args);
     }
 

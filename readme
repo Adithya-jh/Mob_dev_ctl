@@ -1,0 +1,4 @@
+Mobile file Transfer:
+    Push: sudo ./mobdev_ctl transfer push bomb.txt
+    Pull: sudo ./mobdev_ctl transfer pull bomb.txt
+
