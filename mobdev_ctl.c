@@ -13,7 +13,8 @@ enum mobdev_cmd {
     MOBDEV_FILE_TRANSFER,
     MOBDEV_TETHERING,
     MOBDEV_NOTIFICATIONS,
-    MOBDEV_CALL_CONTROL   // 📞 Call handling
+    MOBDEV_CALL_CONTROL,   // 📞 Call handling
+    MOBDEV_MEDIA_CONTROL, // must match the kernel's value
 };
 
 // Updated structure to include 'action' for call control.
@@ -32,6 +33,7 @@ static void usage(const char *prog)
     fprintf(stderr, "  %s tether [on|off] <interface>\n", prog);
     fprintf(stderr, "  %s notify [on|off]\n", prog);
     fprintf(stderr, "  %s call [answer|reject]\n", prog);
+    fprintf(stderr, "  %s volume [up|down]\n", prog);
 }
 
 int main(int argc, char *argv[])
@@ -110,6 +112,21 @@ int main(int argc, char *argv[])
             return 1;
         }
     }
+    else if (!strcmp(argv[1], "volume")) {
+        cmd = MOBDEV_MEDIA_CONTROL;
+        if (argc < 3) {
+            fprintf(stderr, "Usage: %s volume [up|down]\n", argv[0]);
+            return 1;
+        }
+        if (!strcmp(argv[2], "up")) {
+            args.action = 1;  // 1 => up
+        } else if (!strcmp(argv[2], "down")) {
+            args.action = 0;  // 0 => down
+        } else {
+            fprintf(stderr, "Invalid volume option. Use 'up' or 'down'.\n");
+            return 1;
+        }
+}
     else {
         fprintf(stderr, "Unknown command: %s\n", argv[1]);
         usage(argv[0]);
