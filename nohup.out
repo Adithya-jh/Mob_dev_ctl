@@ -1,0 +1,26 @@
+
+(gsd-power:4095): libupower-glib-WARNING **: 00:19:09.753: Couldn't connect to proxy: Error calling StartServiceByName for org.freedesktop.UPower: Failed to activate service 'org.freedesktop.UPower': timed out (service_start_timeout=25000ms)
+
+(gsd-power:4095): libupower-glib-CRITICAL **: 00:19:09.754: up_client_get_lid_is_present: assertion 'UP_IS_CLIENT (client)' failed
+
+(gsd-power:4095): GLib-GObject-WARNING **: 00:19:09.773: invalid (NULL) pointer instance
+
+(gsd-power:4095): GLib-GObject-CRITICAL **: 00:19:09.773: g_signal_connect_data: assertion 'G_TYPE_CHECK_INSTANCE (instance)' failed
+
+(gsd-power:4095): GLib-GObject-WARNING **: 00:19:09.773: invalid (NULL) pointer instance
+
+(gsd-power:4095): GLib-GObject-CRITICAL **: 00:19:09.773: g_signal_connect_data: assertion 'G_TYPE_CHECK_INSTANCE (instance)' failed
+
+(gsd-power:4095): GLib-GObject-WARNING **: 00:19:09.773: invalid (NULL) pointer instance
+
+(gsd-power:4095): GLib-GObject-CRITICAL **: 00:19:09.773: g_signal_connect_data: assertion 'G_TYPE_CHECK_INSTANCE (instance)' failed
+
+(gsd-power:4095): GLib-GObject-WARNING **: 00:19:09.773: invalid (NULL) pointer instance
+
+(gsd-power:4095): GLib-GObject-CRITICAL **: 00:19:09.773: g_signal_connect_data: assertion 'G_TYPE_CHECK_INSTANCE (instance)' failed
+
+(gsd-power:4095): GLib-GObject-WARNING **: 00:19:34.774: invalid (NULL) pointer instance
+
+(gsd-power:4095): GLib-GObject-CRITICAL **: 00:19:34.774: g_signal_connect_data: assertion 'G_TYPE_CHECK_INSTANCE (instance)' failed
+
+(gsd-power:4095): libupower-glib-CRITICAL **: 00:19:34.774: up_client_get_devices_full: assertion 'UP_IS_CLIENT (client)' failed
