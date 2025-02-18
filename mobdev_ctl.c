@@ -15,7 +15,8 @@ enum mobdev_cmd {
     MOBDEV_NOTIFICATIONS,
     MOBDEV_CALL_CONTROL,
     MOBDEV_MEDIA_CONTROL,
-    MOBDEV_SCREENSHOT
+    MOBDEV_SCREENSHOT,
+    MOBDEV_SCREEN_MIRROR
 };
 
 struct mobdev_args {
@@ -35,6 +36,7 @@ static void usage(const char *prog)
     fprintf(stderr, "  %s call [answer|reject]\n", prog);
     fprintf(stderr, "  %s volume [up|down]\n", prog);
     fprintf(stderr, "  %s screenshot\n", prog);
+    fprintf(stderr, "  %s mirror [start|stop]\n", prog);
 }
 
 int main(int argc, char *argv[])
@@ -109,6 +111,7 @@ int main(int argc, char *argv[])
             strcpy(args.ifname, "usb0");
         }
     }
+
     else if (!strcmp(argv[1], "notify")) {
         cmd = MOBDEV_NOTIFICATIONS;
         if (argc >= 3 && !strcmp(argv[2], "on")) {
@@ -117,6 +120,8 @@ int main(int argc, char *argv[])
             args.enable = 0;
         }
     }
+
+
     else if (!strcmp(argv[1], "call")) {
         if (argc < 3) {
             fprintf(stderr, "Usage: %s call [answer|reject]\n", argv[0]);
@@ -142,6 +147,8 @@ int main(int argc, char *argv[])
         system(adb_cmd);
         return 0;
     }
+
+
     else if (!strcmp(argv[1], "volume")) {
         if (argc < 3) {
             fprintf(stderr, "Usage: %s volume [up|down]\n", argv[0]);
@@ -165,6 +172,8 @@ int main(int argc, char *argv[])
         printf("Volume %s command executed via kernel netlink IPC.\n", (args.action == 1) ? "up" : "down");
         return 0;
     }
+
+
     else if (!strcmp(argv[1], "screenshot")) {
         cmd = MOBDEV_SCREENSHOT;
         long ret = syscall(SYS_mobdev_control, cmd, 0);
@@ -174,6 +183,35 @@ int main(int argc, char *argv[])
         }
         return 0;
     }
+
+
+    else if (!strcmp(argv[1], "mirror")) {
+        if (argc < 3) {
+            fprintf(stderr, "Usage: %s mirror [start|stop]\n", argv[0]);
+            return 1;
+        }
+        cmd = MOBDEV_SCREEN_MIRROR;
+        memset(&args, 0, sizeof(args));
+        if (!strcmp(argv[2], "start")) {
+            args.action = 1;
+        } else if (!strcmp(argv[2], "stop")) {
+            args.action = 0;
+        } else {
+            fprintf(stderr, "Invalid mirror command. Use 'start' or 'stop'.\n");
+            return 1;
+        }
+        long ret = syscall(SYS_mobdev_control, cmd, &args);
+        if (ret < 0) {
+            perror("mobdev_control syscall failed");
+            return 1;
+        }
+        printf("Screen mirroring command (%s) executed via kernel netlink IPC.\n",
+            (args.action == 1) ? "start" : "stop");
+        return 0;
+}
+
+    
+
     else {
         fprintf(stderr, "Unknown command: %s\n", argv[1]);
         usage(argv[0]);
